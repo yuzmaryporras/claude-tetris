@@ -47,6 +47,11 @@ jobs:
                  el código todavía — este diagnóstico se usará después como base
                  para el desarrollo.
 
+               El comentario debe estar escrito en formato Markdown válido para
+               que GitHub lo renderice correctamente (usa encabezados, listas y
+               bloques de código con backticks para nombres de funciones/archivos
+               según corresponda).
+
             No modifiques el código del repositorio en esta tarea, solo el issue
             (labels y comentario).
 
