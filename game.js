@@ -28,6 +28,16 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const WALL_KICK_OFFSETS = [0, -1, 1, -2, 2];
+const BASE_DROP_MS = 1000;
+const MIN_DROP_MS = 100;
+const SPEED_STEP_MS = 90;
+const LINES_PER_LEVEL = 10;
+const HARD_DROP_POINTS_PER_ROW = 2;
+const SOFT_DROP_POINTS_PER_ROW = 1;
+const NEXT_PREVIEW_GRID_SIZE = 4;
+const NEXT_PREVIEW_BLOCK = 30;
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -76,8 +86,7 @@ function rotateCW(shape) {
 
 function tryRotate() {
   const rotated = rotateCW(current.shape);
-  const kicks = [0, -1, 1, -2, 2];
-  for (const kick of kicks) {
+  for (const kick of WALL_KICK_OFFSETS) {
     if (!collide(rotated, current.x + kick, current.y)) {
       current.shape = rotated;
       current.x += kick;
@@ -106,8 +115,8 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    level = Math.floor(lines / LINES_PER_LEVEL) + 1;
+    dropInterval = Math.max(MIN_DROP_MS, BASE_DROP_MS - (level - 1) * SPEED_STEP_MS);
     updateHUD();
   }
 }
@@ -120,7 +129,7 @@ function ghostY() {
 
 function hardDrop() {
   const gy = ghostY();
-  score += (gy - current.y) * 2;
+  score += (gy - current.y) * HARD_DROP_POINTS_PER_ROW;
   current.y = gy;
   lockPiece();
 }
@@ -128,7 +137,7 @@ function hardDrop() {
 function softDrop() {
   if (!collide(current.shape, current.x, current.y + 1)) {
     current.y++;
-    score += 1;
+    score += SOFT_DROP_POINTS_PER_ROW;
     updateHUD();
   } else {
     lockPiece();
@@ -208,14 +217,13 @@ function draw() {
 }
 
 function drawNext() {
-  const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
-  const offX = Math.floor((4 - shape[0].length) / 2);
-  const offY = Math.floor((4 - shape.length) / 2);
+  const offX = Math.floor((NEXT_PREVIEW_GRID_SIZE - shape[0].length) / 2);
+  const offY = Math.floor((NEXT_PREVIEW_GRID_SIZE - shape.length) / 2);
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
-      drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
+      drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NEXT_PREVIEW_BLOCK);
 }
 
 function endGame() {
@@ -263,7 +271,7 @@ function init() {
   level = 1;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = BASE_DROP_MS;
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();

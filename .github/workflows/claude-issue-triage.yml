@@ -1,0 +1,53 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio
+            ("${{ github.event.issue.title }}") y realiza dos tareas:
+
+            1. Labels: revisa el contenido del issue y el código del repo (game.js,
+               index.html, style.css, guiado por CLAUDE.md) y aplica el/los labels
+               más apropiados usando `gh issue edit ${{ github.event.issue.number }}
+               --add-label "<label>"`. Usa únicamente labels que ya existen en el
+               repositorio (consulta `gh label list` si tienes dudas) — no crees
+               labels nuevos. Si el issue ya tiene labels correctos, no dupliques
+               ni quites labels sin motivo.
+
+            2. Diagnóstico: publica un comentario en el issue con
+               `gh issue comment ${{ github.event.issue.number }} --body "..."`
+               que incluya un diagnóstico general del problema:
+               - Resumen breve del problema reportado.
+               - Causa probable, referenciando funciones/archivos concretos de
+                 game.js (por ejemplo collide, tryRotate, clearLines, loop, spawn,
+                 draw) según la arquitectura descrita en CLAUDE.md.
+               - Sugerencia de enfoque para implementar la solución, sin escribir
+                 el código todavía — este diagnóstico se usará después como base
+                 para el desarrollo.
+
+            No modifiques el código del repositorio en esta tarea, solo el issue
+            (labels y comentario).
+
+          claude_args: '--allowedTools "Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue view:*),Bash(gh label list:*)"'
